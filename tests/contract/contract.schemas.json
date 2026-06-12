@@ -1,0 +1,182 @@
+{
+  "_meta": {
+    "refs": "$ref values are bare schema names resolved against this root map (not JSON-Pointer).",
+    "source_of_truth": "../../api/openapi/realworld.openapi.yaml (components.schemas) - Refs #2.",
+    "note": "Faithful JSON projection of the OpenAPI contract for the offline validator (PP-1 decision A). Regenerate from the YAML when the contract changes; the YAML remains the single source of truth (GUIA §3.2/§16, contract imutavel)."
+  },
+
+  "User": {
+    "type": "object",
+    "required": ["email", "token", "username"],
+    "properties": {
+      "email": { "type": "string", "format": "email" },
+      "token": { "type": "string" },
+      "username": { "type": "string" },
+      "bio": { "type": "string", "nullable": true },
+      "image": { "type": "string", "nullable": true }
+    }
+  },
+  "LoginUser": {
+    "type": "object",
+    "required": ["email", "password"],
+    "properties": {
+      "email": { "type": "string", "format": "email" },
+      "password": { "type": "string" }
+    }
+  },
+  "NewUser": {
+    "type": "object",
+    "required": ["username", "email", "password"],
+    "properties": {
+      "username": { "type": "string" },
+      "email": { "type": "string", "format": "email" },
+      "password": { "type": "string" }
+    }
+  },
+  "UpdateUser": {
+    "type": "object",
+    "properties": {
+      "email": { "type": "string", "format": "email" },
+      "username": { "type": "string" },
+      "password": { "type": "string" },
+      "image": { "type": "string", "nullable": true },
+      "bio": { "type": "string", "nullable": true }
+    }
+  },
+
+  "Profile": {
+    "type": "object",
+    "required": ["username", "following"],
+    "properties": {
+      "username": { "type": "string" },
+      "bio": { "type": "string", "nullable": true },
+      "image": { "type": "string", "nullable": true },
+      "following": { "type": "boolean" }
+    }
+  },
+
+  "Article": {
+    "type": "object",
+    "required": ["slug", "title", "description", "body", "tagList", "createdAt", "updatedAt", "favorited", "favoritesCount", "author"],
+    "properties": {
+      "slug": { "type": "string" },
+      "title": { "type": "string" },
+      "description": { "type": "string" },
+      "body": { "type": "string" },
+      "tagList": { "type": "array", "items": { "type": "string" } },
+      "createdAt": { "type": "string", "format": "date-time" },
+      "updatedAt": { "type": "string", "format": "date-time" },
+      "favorited": { "type": "boolean" },
+      "favoritesCount": { "type": "integer" },
+      "author": { "$ref": "Profile" }
+    }
+  },
+  "NewArticle": {
+    "type": "object",
+    "required": ["title", "description", "body"],
+    "properties": {
+      "title": { "type": "string" },
+      "description": { "type": "string" },
+      "body": { "type": "string" },
+      "tagList": { "type": "array", "items": { "type": "string" } }
+    }
+  },
+  "UpdateArticle": {
+    "type": "object",
+    "properties": {
+      "title": { "type": "string" },
+      "description": { "type": "string" },
+      "body": { "type": "string" },
+      "tagList": { "type": "array", "items": { "type": "string" } }
+    }
+  },
+
+  "Comment": {
+    "type": "object",
+    "required": ["id", "createdAt", "updatedAt", "body", "author"],
+    "properties": {
+      "id": { "type": "integer" },
+      "createdAt": { "type": "string", "format": "date-time" },
+      "updatedAt": { "type": "string", "format": "date-time" },
+      "body": { "type": "string" },
+      "author": { "$ref": "Profile" }
+    }
+  },
+
+  "UserResponse": {
+    "type": "object",
+    "required": ["user"],
+    "properties": { "user": { "$ref": "User" } }
+  },
+  "ProfileResponse": {
+    "type": "object",
+    "required": ["profile"],
+    "properties": { "profile": { "$ref": "Profile" } }
+  },
+  "ArticleResponse": {
+    "type": "object",
+    "required": ["article"],
+    "properties": { "article": { "$ref": "Article" } }
+  },
+  "MultipleArticlesResponse": {
+    "type": "object",
+    "required": ["articles", "articlesCount"],
+    "properties": {
+      "articles": { "type": "array", "items": { "$ref": "Article" } },
+      "articlesCount": { "type": "integer" }
+    }
+  },
+  "CommentResponse": {
+    "type": "object",
+    "required": ["comment"],
+    "properties": { "comment": { "$ref": "Comment" } }
+  },
+  "MultipleCommentsResponse": {
+    "type": "object",
+    "required": ["comments"],
+    "properties": { "comments": { "type": "array", "items": { "$ref": "Comment" } } }
+  },
+  "TagsResponse": {
+    "type": "object",
+    "required": ["tags"],
+    "properties": { "tags": { "type": "array", "items": { "type": "string" } } }
+  },
+  "GenericErrorModel": {
+    "type": "object",
+    "required": ["errors"],
+    "properties": {
+      "errors": {
+        "type": "object",
+        "required": ["body"],
+        "properties": { "body": { "type": "array", "items": { "type": "string" } } }
+      }
+    }
+  },
+
+  "LoginRequest": {
+    "type": "object",
+    "required": ["user"],
+    "properties": { "user": { "$ref": "LoginUser" } }
+  },
+  "NewUserRequest": {
+    "type": "object",
+    "required": ["user"],
+    "properties": { "user": { "$ref": "NewUser" } }
+  },
+  "NewArticleRequest": {
+    "type": "object",
+    "required": ["article"],
+    "properties": { "article": { "$ref": "NewArticle" } }
+  },
+  "CreateCommentRequest": {
+    "type": "object",
+    "required": ["comment"],
+    "properties": {
+      "comment": {
+        "type": "object",
+        "required": ["body"],
+        "properties": { "body": { "type": "string" } }
+      }
+    }
+  }
+}

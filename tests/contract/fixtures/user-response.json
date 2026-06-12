@@ -1,0 +1,9 @@
+{
+  "user": {
+    "email": "jake@example.com",
+    "token": "fake.jwt.token-for-tests",
+    "username": "jake",
+    "bio": "I work at statefarm",
+    "image": null
+  }
+}

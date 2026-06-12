@@ -1,0 +1,614 @@
+openapi: 3.0.3
+
+# =============================================================================
+# Fase 2 - Rede de seguranca (Refs: #2)
+# Contrato RealWorld *consumido* pelo app AngularJS legado, extraido fielmente do
+# codigo-fonte (NAO inventado). Fontes verificadas em 2026-06-11:
+#   - src/js/services/user.service.js      (POST /users/login, POST /users, GET/PUT /user)
+#   - src/js/services/articles.service.js  (GET /articles[/feed], GET/POST/PUT/DELETE /articles/{slug}, favorite)
+#   - src/js/services/comments.service.js  (GET/POST/DELETE /articles/{slug}/comments)
+#   - src/js/services/profile.service.js   (GET /profiles/{username}, follow)
+#   - src/js/services/tags.service.js      (GET /tags)
+#   - src/js/config/auth.interceptor.js    (header "Authorization: Token <jwt>"; 401 -> destroy+reload)
+#   - src/js/config/app.constants.js       (base api: https://conduit.productionready.io/api)
+#   - src/js/services/jwt.service.js       (token persistido em localStorage sob "jwtToken")
+# GUIA: contrato imutavel (§3.2/§16) - este doc apenas DOCUMENTA e VERIFICA, nunca altera.
+# =============================================================================
+
+info:
+  title: Conduit (RealWorld) API - contrato consumido pelo app AngularJS legado
+  description: >
+    Especificacao do contrato HTTP que o frontend AngularJS Conduit consome.
+    Serve como oraculo de paridade para a migracao Angular 21 (Fase 3): os
+    contract tests (T2) sao derivados deste documento e qualquer divergencia
+    entre o que o app envia/espera e este contrato falha o gate.
+    O esquema de autenticacao e `Token` (NAO `Bearer`) - ver `tokenAuth`.
+  version: 1.0.0
+  contact:
+    name: angularjs-realworld-example-app (Fase 2)
+
+servers:
+  - url: https://conduit.productionready.io/api
+    description: Backend RealWorld de producao (AppConstants.api)
+  - url: http://localhost:3000/api
+    description: Backend local (linha comentada em app.constants.js)
+
+tags:
+  - name: Auth & Users
+  - name: Profiles
+  - name: Articles
+  - name: Comments
+  - name: Tags
+
+# -----------------------------------------------------------------------------
+# Seguranca: o app envia "Authorization: Token <jwt>" (auth.interceptor.js).
+# OpenAPI 3.0 nao tem um tipo nativo para o prefixo "Token", entao modelamos
+# como apiKey no header Authorization; o valor INCLUI o prefixo literal "Token ".
+# -----------------------------------------------------------------------------
+components:
+  securitySchemes:
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: >
+        Header literal `Authorization: Token <jwt>`. O prefixo e `Token` (nao
+        `Bearer`). O JWT vem de `res.data.user.token` no login/registro e e
+        persistido em localStorage sob a chave `jwtToken` (jwt.service.js).
+        Resposta 401 dispara `JWT.destroy()` + reload no app (auth.interceptor.js).
+
+  schemas:
+    # ---- Usuario autenticado (envelope { user }) ----
+    User:
+      type: object
+      required: [email, token, username]
+      properties:
+        email: { type: string, format: email }
+        token: { type: string, description: JWT usado em "Authorization: Token <jwt>" }
+        username: { type: string }
+        bio: { type: string, nullable: true }
+        image: { type: string, nullable: true }
+
+    LoginUser:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+
+    NewUser:
+      type: object
+      required: [username, email, password]
+      properties:
+        username: { type: string }
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+
+    UpdateUser:
+      type: object
+      description: Campos enviados por settings.controller.js (User.update).
+      properties:
+        email: { type: string, format: email }
+        username: { type: string }
+        password: { type: string, format: password }
+        image: { type: string, nullable: true }
+        bio: { type: string, nullable: true }
+
+    # ---- Perfil publico (envelope { profile }) ----
+    Profile:
+      type: object
+      required: [username, following]
+      properties:
+        username: { type: string }
+        bio: { type: string, nullable: true }
+        image: { type: string, nullable: true }
+        following: { type: boolean }
+
+    # ---- Artigo (envelope { article }) ----
+    Article:
+      type: object
+      required:
+        [slug, title, description, body, tagList, createdAt, updatedAt, favorited, favoritesCount, author]
+      properties:
+        slug: { type: string }
+        title: { type: string }
+        description: { type: string }
+        body: { type: string }
+        tagList:
+          type: array
+          items: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        favorited: { type: boolean }
+        favoritesCount: { type: integer }
+        author: { $ref: '#/components/schemas/Profile' }
+
+    NewArticle:
+      type: object
+      required: [title, description, body]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        body: { type: string }
+        tagList:
+          type: array
+          items: { type: string }
+
+    UpdateArticle:
+      type: object
+      description: editor.controller.js envia title/description/body/tagList (slug e removido antes do PUT).
+      properties:
+        title: { type: string }
+        description: { type: string }
+        body: { type: string }
+        tagList:
+          type: array
+          items: { type: string }
+
+    # ---- Comentario (envelope { comment }) ----
+    Comment:
+      type: object
+      required: [id, createdAt, updatedAt, body, author]
+      properties:
+        id: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        body: { type: string }
+        author: { $ref: '#/components/schemas/Profile' }
+
+    # ---- Envelopes de resposta ----
+    UserResponse:
+      type: object
+      required: [user]
+      properties:
+        user: { $ref: '#/components/schemas/User' }
+
+    ProfileResponse:
+      type: object
+      required: [profile]
+      properties:
+        profile: { $ref: '#/components/schemas/Profile' }
+
+    ArticleResponse:
+      type: object
+      required: [article]
+      properties:
+        article: { $ref: '#/components/schemas/Article' }
+
+    MultipleArticlesResponse:
+      type: object
+      required: [articles, articlesCount]
+      properties:
+        articles:
+          type: array
+          items: { $ref: '#/components/schemas/Article' }
+        articlesCount: { type: integer }
+
+    CommentResponse:
+      type: object
+      required: [comment]
+      properties:
+        comment: { $ref: '#/components/schemas/Comment' }
+
+    MultipleCommentsResponse:
+      type: object
+      required: [comments]
+      properties:
+        comments:
+          type: array
+          items: { $ref: '#/components/schemas/Comment' }
+
+    TagsResponse:
+      type: object
+      required: [tags]
+      properties:
+        tags:
+          type: array
+          items: { type: string }
+
+    # ---- Erro de validacao padrao RealWorld (err.data.errors no app) ----
+    GenericErrorModel:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: object
+          required: [body]
+          properties:
+            body:
+              type: array
+              items: { type: string }
+
+  responses:
+    Unauthorized:
+      description: Nao autenticado / token invalido (interceptor faz destroy + reload).
+    UnprocessableEntity:
+      description: Erro de validacao (consumido como `err.data.errors` no app).
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/GenericErrorModel' }
+
+  parameters:
+    limit:
+      name: limit
+      in: query
+      description: Numero de artigos por pagina (article-list.component.js define a partir de `limit`).
+      required: false
+      schema: { type: integer, default: 20 }
+    offset:
+      name: offset
+      in: query
+      description: Offset de paginacao = limit * (currentPage - 1) (article-list.component.js).
+      required: false
+      schema: { type: integer, default: 0 }
+
+paths:
+  # ===================== Auth & Users =====================
+  /users/login:
+    post:
+      tags: [Auth & Users]
+      summary: Login (User.attemptAuth type=login)
+      description: POST com envelope `{ user: { email, password } }`; resposta salva `res.data.user.token`.
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user]
+              properties:
+                user: { $ref: '#/components/schemas/LoginUser' }
+      responses:
+        '200':
+          description: Usuario autenticado com token.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /users:
+    post:
+      tags: [Auth & Users]
+      summary: Registro (User.attemptAuth type=register -> route '')
+      description: POST com envelope `{ user: { username, email, password } }`.
+      operationId: createUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user]
+              properties:
+                user: { $ref: '#/components/schemas/NewUser' }
+      responses:
+        '200':
+          description: Usuario criado com token.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserResponse' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /user:
+    get:
+      tags: [Auth & Users]
+      summary: Usuario atual (User.verifyAuth)
+      operationId: getCurrentUser
+      security: [{ tokenAuth: [] }]
+      responses:
+        '200':
+          description: Usuario atual.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [Auth & Users]
+      summary: Atualizar usuario (User.update)
+      description: PUT com envelope `{ user: <campos> }` (settings.controller.js).
+      operationId: updateCurrentUser
+      security: [{ tokenAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user]
+              properties:
+                user: { $ref: '#/components/schemas/UpdateUser' }
+      responses:
+        '200':
+          description: Usuario atualizado.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  # ===================== Profiles =====================
+  /profiles/{username}:
+    parameters:
+      - name: username
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      tags: [Profiles]
+      summary: Perfil por username (Profile.get)
+      operationId: getProfileByUsername
+      security: []
+      responses:
+        '200':
+          description: Perfil.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProfileResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /profiles/{username}/follow:
+    parameters:
+      - name: username
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      tags: [Profiles]
+      summary: Seguir usuario (Profile.follow)
+      operationId: followUserByUsername
+      security: [{ tokenAuth: [] }]
+      responses:
+        '200':
+          description: Perfil (following=true).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProfileResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      tags: [Profiles]
+      summary: Deixar de seguir (Profile.unfollow)
+      operationId: unfollowUserByUsername
+      security: [{ tokenAuth: [] }]
+      responses:
+        '200':
+          description: Perfil (following=false).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProfileResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ===================== Articles =====================
+  /articles:
+    get:
+      tags: [Articles]
+      summary: Listar artigos (Articles.query type=all)
+      description: Filtros enviados como query params (tag, author, favorited, limit, offset).
+      operationId: getArticles
+      security: []
+      parameters:
+        - name: tag
+          in: query
+          required: false
+          schema: { type: string }
+        - name: author
+          in: query
+          required: false
+          schema: { type: string }
+        - name: favorited
+          in: query
+          required: false
+          schema: { type: string }
+        - { $ref: '#/components/parameters/limit' }
+        - { $ref: '#/components/parameters/offset' }
+      responses:
+        '200':
+          description: Lista de artigos + contagem.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MultipleArticlesResponse' }
+    post:
+      tags: [Articles]
+      summary: Criar artigo (Articles.save sem slug)
+      description: POST com envelope `{ article: { title, description, body, tagList } }`.
+      operationId: createArticle
+      security: [{ tokenAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [article]
+              properties:
+                article: { $ref: '#/components/schemas/NewArticle' }
+      responses:
+        '200':
+          description: Artigo criado.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ArticleResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /articles/feed:
+    get:
+      tags: [Articles]
+      summary: Feed do usuario (Articles.query type=feed)
+      operationId: getArticlesFeed
+      security: [{ tokenAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/limit' }
+        - { $ref: '#/components/parameters/offset' }
+      responses:
+        '200':
+          description: Artigos do feed + contagem.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MultipleArticlesResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /articles/{slug}:
+    parameters:
+      - name: slug
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      tags: [Articles]
+      summary: Obter artigo por slug (Articles.get -> res.data.article)
+      operationId: getArticle
+      security: []
+      responses:
+        '200':
+          description: Artigo.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ArticleResponse' }
+    put:
+      tags: [Articles]
+      summary: Atualizar artigo (Articles.save com slug)
+      description: PUT com envelope `{ article: <campos> }`; o `slug` e removido do corpo antes do envio.
+      operationId: updateArticle
+      security: [{ tokenAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [article]
+              properties:
+                article: { $ref: '#/components/schemas/UpdateArticle' }
+      responses:
+        '200':
+          description: Artigo atualizado.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ArticleResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+    delete:
+      tags: [Articles]
+      summary: Excluir artigo (Articles.destroy)
+      operationId: deleteArticle
+      security: [{ tokenAuth: [] }]
+      responses:
+        '200':
+          description: Artigo excluido.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /articles/{slug}/favorite:
+    parameters:
+      - name: slug
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      tags: [Articles]
+      summary: Favoritar artigo (Articles.favorite)
+      operationId: createArticleFavorite
+      security: [{ tokenAuth: [] }]
+      responses:
+        '200':
+          description: Artigo (favorited=true).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ArticleResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      tags: [Articles]
+      summary: Desfavoritar artigo (Articles.unfavorite)
+      operationId: deleteArticleFavorite
+      security: [{ tokenAuth: [] }]
+      responses:
+        '200':
+          description: Artigo (favorited=false).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ArticleResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ===================== Comments =====================
+  /articles/{slug}/comments:
+    parameters:
+      - name: slug
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      tags: [Comments]
+      summary: Listar comentarios (Comments.getAll -> res.data.comments)
+      operationId: getArticleComments
+      security: []
+      responses:
+        '200':
+          description: Lista de comentarios.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MultipleCommentsResponse' }
+    post:
+      tags: [Comments]
+      summary: Adicionar comentario (Comments.add)
+      description: POST com envelope `{ comment: { body } }`.
+      operationId: createArticleComment
+      security: [{ tokenAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [comment]
+              properties:
+                comment:
+                  type: object
+                  required: [body]
+                  properties:
+                    body: { type: string }
+      responses:
+        '200':
+          description: Comentario criado.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CommentResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /articles/{slug}/comments/{id}:
+    parameters:
+      - name: slug
+        in: path
+        required: true
+        schema: { type: string }
+      - name: id
+        in: path
+        required: true
+        description: commentId (Comments.destroy).
+        schema: { type: integer }
+    delete:
+      tags: [Comments]
+      summary: Excluir comentario (Comments.destroy)
+      operationId: deleteArticleComment
+      security: [{ tokenAuth: [] }]
+      responses:
+        '200':
+          description: Comentario excluido.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ===================== Tags =====================
+  /tags:
+    get:
+      tags: [Tags]
+      summary: Listar tags (Tags.getAll -> res.data.tags)
+      operationId: getTags
+      security: []
+      responses:
+        '200':
+          description: Lista de tags.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TagsResponse' }

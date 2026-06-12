@@ -1,0 +1,17 @@
+{
+  "name": "conduit-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Playwright E2E safety net for the legacy AngularJS Conduit app (Fase 2 · Refs #2)",
+  "scripts": {
+    "test": "playwright test",
+    "test:ci": "playwright test --reporter=list,html,json",
+    "report": "playwright show-report",
+    "install:browsers": "playwright install --with-deps chromium",
+    "serve": "node mock/static-server.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "conduit-contract-tests",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Fase 2 (Refs #2) - contract tests: valida fixtures versionadas contra o contrato OpenAPI RealWorld (PP-1 decisao A). Offline, deterministico, sem backend ao vivo e sem dependencias de terceiros.",
+  "scripts": {
+    "test": "node --test",
+    "coverage": "node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/lcov.info --test-reporter=spec --test-reporter-destination=stdout"
+  }
+}
