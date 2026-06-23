@@ -1,16 +1,17 @@
-# E2E — Playwright · Rede de segurança Fase 2 (T3) · Refs #2
+# E2E — Playwright · Paridade S4 da Fase 3 + Incrementos da Fase 4 · Refs #5 #6
 
-Rede de segurança **T3**: captura os **fluxos observáveis** do app AngularJS
-**legado atual** como oráculo de paridade para a migração Angular 21 (Fase 3,
-GUIA §5.6, §15.2). Roda contra o app **como está hoje** — não contra o rewrite.
+A suíte E2E valida os **fluxos observáveis** do app **Angular 21 migrado**
+contra o mesmo mock determinístico da Fase 2, preservando o contrato RealWorld
+imutável e cobrindo explicitamente o **R2/SR-2** na página de artigo.
+A Fase 4 adicionou cobertura de **dark mode** (S1) e **drafts** (S2).
 
-## Decisão PP-1 (A)
+## Decisão herdada da Fase 2
 
-A API RealWorld é servida por um **mock efêmero em processo**: os fixtures do
+A API RealWorld continua servida por um **mock efêmero em processo**: os fixtures do
 Playwright interceptam as XHRs do app (`page.route`) e respondem a partir de
 [`mock/api.mjs`](mock/api.mjs). Isso mantém o E2E **offline e determinístico** e
-**não toca `src/js/**`** — a URL da API é hardcoded em `app.constants.js` e é
-interceptada no browser, nunca editada.
+**não toca `src/js/**`** — a URL da API segue hardcoded em
+`https://conduit.productionready.io/api` e é interceptada no browser.
 
 ## Gate de cobertura por fluxo (item 9)
 
@@ -22,8 +23,10 @@ O E2E não usa percentual de linha; a cobertura é **por fluxo**. O gate é
 | 1 | login / register | [`specs/auth.spec.mjs`](specs/auth.spec.mjs) |
 | 2 | listar / abrir artigo | [`specs/articles.spec.mjs`](specs/articles.spec.mjs) |
 | 3 | criar / editar / publicar | [`specs/editor.spec.mjs`](specs/editor.spec.mjs) |
-| 4 | favoritar | [`specs/social.spec.mjs`](specs/social.spec.mjs) |
-| 5 | seguir | [`specs/social.spec.mjs`](specs/social.spec.mjs) |
+| 4 | favoritar na página de artigo | [`specs/social.spec.mjs`](specs/social.spec.mjs) |
+| 5 | seguir na página de artigo | [`specs/social.spec.mjs`](specs/social.spec.mjs) |
+| 6 | dark mode toggle + persistência | [`specs/dark-mode.spec.mjs`](specs/dark-mode.spec.mjs) |
+| 7 | draft restauração + limpeza no publish | [`specs/editor.spec.mjs`](specs/editor.spec.mjs) |
 
 Remover um fluxo desta lista exige decisão registrada no `progress.md`.
 
@@ -31,24 +34,24 @@ Remover um fluxo desta lista exige decisão registrada no `progress.md`.
 
 O mock só responde aos endpoints autenticados (`GET/PUT /user`) quando o header
 é `Authorization: Token <jwt>` — um `Bearer` recebe **401**. O esquema Token é,
-portanto, um gate **observável** também no E2E, não só nos contract tests (T2).
+portanto, um gate **observável** também no E2E, não só nos contract tests.
 
 ## Como rodar
 
 ```bash
-# 1) build do app legado (gera ./build/index.html + ./build/main.js)
-npm install
-npx gulp                      # toolchain legada (browserify + templatecache)
+# 1) build do app Angular migrado
+npm run build --prefix app
 
 # 2) E2E
 cd tests/e2e
 npm install
 npm run install:browsers      # baixa o Chromium (passo de REDE — fora do offline)
-npm test                      # sobe o static-server + roda os 6 casos
+npm test                      # sobe o static-server + roda os 7 casos
 ```
 
 O `webServer` do Playwright sobe [`mock/static-server.mjs`](mock/static-server.mjs),
-que entrega o build estático do app (sem fallback SPA — o app é hashbang-routed).
+que entrega o build estático do Angular em `app/dist/conduit-angular-21/browser`
+com fallback SPA para as rotas path-based.
 
 ## Estrutura
 
@@ -57,18 +60,16 @@ que entrega o build estático do app (sem fallback SPA — o app é hashbang-rou
 | `playwright.config.mjs` | Projeto chromium, `webServer` (static-server), baseURL `:4173`. |
 | `mock/data.mjs` | Seed sintético (usuário, autor, artigo, tags). Sem segredos reais. |
 | `mock/api.mjs` | Mock do contrato RealWorld consumido (gate do esquema Token). |
-| `mock/static-server.mjs` | Servidor estático zero-dep do build do app. |
+| `mock/static-server.mjs` | Servidor estático zero-dep do build Angular 21. |
 | `fixtures/test-fixtures.mjs` | `page.route` → mock; `loginViaToken` (seed de auth). |
-| `helpers/app.mjs` | Rotas hashbang + seletores fiéis aos templates `src/js/**/*.html`. |
-| `specs/*.spec.mjs` | Os 5 fluxos da rede de segurança. |
+| `helpers/app.mjs` | Rotas path-based e seletores fiéis ao app migrado em `app/**`. |
+| `specs/*.spec.mjs` | Os 7 fluxos (5 paridade S4 + 2 Fase 4), totalizando 14 casos. |
 
 ## Limite conhecido (offline)
 
-Instalar o Chromium (`playwright install`) e buildar o app legado são passos de
-**rede/toolchain** — não executáveis no turno offline do harness. A suíte é
-**autorada e verificada por sintaxe**; a **execução ao vivo** roda no runtime de
-CI/host que dispõe de browsers. Os artefatos foram mantidos zero-dep onde possível
-e o mock é determinístico para garantir reprodutibilidade quando executado.
+Instalar o Chromium (`playwright install`) é um passo de **rede/toolchain** — não
+executável no turno offline do harness. A suíte e o mock permanecem determinísticos
+para garantir reprodutibilidade quando executados no runtime com browser disponível.
 
 ## Dados sintéticos
 

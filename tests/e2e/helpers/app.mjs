@@ -1,16 +1,18 @@
-// Helpers de navegação/seleção fiéis aos templates do app legado.
-// Rotas hashbang reais do app legado: os templates renderizam links em /#!/...
-// Seletores derivados 1:1 dos templates em src/js/**/*.html (não inventados).
+// Helpers de navegação/seleção alinhados ao app Angular 21 migrado.
+// Rotas reais usam History API/path routing (sem hashbang).
+// Seletores seguem a estrutura/semântica do Conduit renderizado em `app/**`.
 
 export const routes = {
-  home: '/#!/',
-  login: '/#!/login',
-  register: '/#!/register',
-  editor: '/#!/editor/',
-  article: (slug) => `/#!/article/${slug}`,
+  home: '/',
+  login: '/login',
+  register: '/register',
+  editor: '/editor',
+  editArticle: (slug) => `/editor/${slug}`,
+  article: (slug) => `/article/${slug}`,
+  profile: (username) => `/profile/${username}`,
 };
 
-// Campos do formulário auth/editor são identificados pelo placeholder (templates).
+// Campos do formulário auth/editor seguem os placeholders renderizados pelo app Angular.
 export const sel = {
   auth: {
     username: 'input[placeholder="Username"]',
@@ -25,10 +27,12 @@ export const sel = {
     tags: 'input[placeholder="Enter tags"]',
     publish: 'button:has-text("Publish Article")',
   },
-  // Botões renderizam via componentes AngularJS; alvo pelos contêineres estáveis.
-  feedFavoriteBtn: '.article-preview favorite-btn button',
-  profileFollowBtn: '.user-info follow-btn button.action-btn',
+  article: {
+    followBtn: '.article-page .banner app-follow-button button.action-btn',
+    favoriteBtn: '.article-page .banner app-favorite-button button',
+  },
   navUser: (username) => `.nav-link:has-text("${username}")`,
+  themeToggle: 'button.theme-toggle',
 };
 
 // Login pela UI (fluxo observável, não atalho de localStorage).

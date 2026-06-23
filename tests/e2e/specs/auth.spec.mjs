@@ -14,8 +14,7 @@ test.describe('auth', () => {
     await page.fill(sel.auth.password, CREDS.password);
     await page.click(sel.auth.submit);
 
-    // redireciona para home e o bloco show-authed="true" passa a exibir o usuário
-    await expect(page).toHaveURL(/#!\/$/);
+    await expect(page).toHaveURL(/\/$/);
     await expect(page.locator(sel.navUser('e2e-tester'))).toBeVisible();
     expect(mock.state.currentUser.username).toBe('e2e-tester');
   });
@@ -23,7 +22,7 @@ test.describe('auth', () => {
   test('login autentica e expõe a navegação autenticada', async ({ page }) => {
     await loginViaUi(page, CREDS);
 
-    await expect(page).toHaveURL(/#!\/$/);
+    await expect(page).toHaveURL(/\/$/);
     await expect(page.locator('.nav-link:has-text("New Article")')).toBeVisible();
     await expect(page.locator('.nav-link:has-text("Settings")')).toBeVisible();
   });
