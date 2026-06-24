@@ -53,6 +53,27 @@ O `webServer` do Playwright sobe [`mock/static-server.mjs`](mock/static-server.m
 que entrega o build estático do Angular em `app/dist/conduit-angular-21/browser`
 com fallback SPA para as rotas path-based.
 
+## Branches pass/break (Fase 5 · Refs #7)
+
+A Fase 5 exige demonstrar a rede E2E em dois estados:
+
+| Branch | Expectativa | Comando de gate |
+|---|---|---|
+| `e2e/pass` | suíte Playwright completa verde | `cd tests/e2e && npx playwright test` -> exit 0 |
+| `e2e/break` | regressão intencional em um fluxo funcional | `cd tests/e2e && npx playwright test` -> exit 1 |
+
+Estado validado no slice atual:
+
+- `e2e/pass` candidato: suíte atual com 14/14 testes passando.
+- Evidência: `npm run build --prefix app` PASS; `cd tests/e2e && npm test` PASS (14 passed).
+- `e2e/break` deve ser materializado em branch separada alterando **um único assert
+  funcional observável** (por exemplo, expectativa de `aria-pressed` no teste de dark
+  mode) e confirmando que o Playwright falha sem alterar mock/API/fixtures.
+
+> Nota operacional: criar branches com conteúdo próprio exige commit ou autorização
+> explícita para manipular refs/working tree. Sem commit automático, este README mantém
+> o protocolo auditável e o `progress.md` registra a evidência do pass.
+
 ## Estrutura
 
 | Caminho | Papel |

@@ -51,14 +51,21 @@ test.describe('dark mode', () => {
       window.localStorage.setItem('conduit.theme', 'dark');
     });
     await page.goto('/');
-    await page.click('button.theme-toggle');
-    const hasDark = await page.evaluate(() =>
-      document.documentElement.classList.contains('theme-dark')
-    );
-    expect(hasDark).toBe(false);
+
+    const toggle = page.locator('button.theme-toggle');
+    await expect(toggle).toHaveAttribute('aria-label', 'Switch to light mode');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+
+    await toggle.click();
+
+    await expect(toggle).toHaveAttribute('aria-label', 'Switch to dark mode');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.classList.contains('theme-dark')))
+      .toBe(false);
     const stored = await page.evaluate(() =>
       window.localStorage.getItem('conduit.theme')
     );
-    expect(stored).not.toBe('dark');
+    expect(stored).toBe('light');
   });
 });
