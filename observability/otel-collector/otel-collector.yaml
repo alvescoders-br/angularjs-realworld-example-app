@@ -1,0 +1,59 @@
+# OTel Collector configuration — Conduit frontend observability (S2, Fase 6, issue #8)
+# Receives OTLP/HTTP from browser, exports to Loki (logs), Tempo (traces), Mimir (metrics).
+# CORS is required because the Angular SPA runs in the browser (different origin).
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+        cors:
+          allowed_origins:
+            - "http://localhost:4200"
+            - "http://localhost"
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+
+extensions:
+  # Exposes a readiness endpoint on :13133 (used for manual/external checks).
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+exporters:
+  # Traces → Tempo (OTLP gRPC)
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
+  # Metrics → Mimir (Prometheus remote write)
+  prometheusremotewrite:
+    endpoint: http://mimir:9009/api/v1/push
+    tls:
+      insecure_skip_verify: true
+
+  # Logs → Loki (via loki exporter)
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+    default_labels_enabled:
+      exporter: false
+      job: true
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/tempo]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheusremotewrite]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [loki]

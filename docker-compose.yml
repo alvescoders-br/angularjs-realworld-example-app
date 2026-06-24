@@ -1,0 +1,132 @@
+# Docker Compose — Conduit stack (Fase 6 Operacao, issue #8)
+# S1: frontend (Nginx static, PP-6.1)
+# S2: LGTM observability stack + OTel Collector (PP-6.2)
+# S3: Python validation script targets this file
+
+services:
+
+  # ── Frontend ─────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: conduit-frontend:latest
+    container_name: conduit-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      otel-collector:
+        condition: service_started   # collector has no healthcheck (distroless image)
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ── OTel Collector ────────────────────────────────────────────────────────
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.127.0
+    container_name: conduit-otel-collector
+    command: ["--config=/etc/otel-collector/otel-collector.yaml"]
+    volumes:
+      - ./observability/otel-collector/otel-collector.yaml:/etc/otel-collector/otel-collector.yaml:ro
+    ports:
+      - "4318:4318"   # OTLP HTTP (browser → collector)
+    depends_on:
+      loki:
+        condition: service_healthy
+      tempo:
+        condition: service_healthy
+      mimir:
+        condition: service_started   # mimir image is distroless (no wget) → no healthcheck
+    restart: unless-stopped
+    # No healthcheck: the collector-contrib image is distroless (no wget/sh). Readiness on
+    # :13133 (health_check extension) is validated externally by ops/validate.py log polling.
+
+  # ── Loki (logs) ───────────────────────────────────────────────────────────
+  loki:
+    image: grafana/loki:3.5.0
+    container_name: conduit-loki
+    command: ["-config.file=/etc/loki/loki.yaml"]
+    volumes:
+      - ./observability/loki/loki.yaml:/etc/loki/loki.yaml:ro
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3100/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── Tempo (traces) ────────────────────────────────────────────────────────
+  tempo:
+    image: grafana/tempo:2.7.2
+    container_name: conduit-tempo
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    volumes:
+      - ./observability/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - "3200:3200"   # Tempo HTTP API
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3200/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── Mimir (metrics) ───────────────────────────────────────────────────────
+  mimir:
+    image: grafana/mimir:2.15.0
+    container_name: conduit-mimir
+    command: ["--config.file=/etc/mimir/mimir.yaml"]
+    volumes:
+      - ./observability/mimir/mimir.yaml:/etc/mimir/mimir.yaml:ro
+      - mimir-data:/data/mimir
+    ports:
+      - "9009:9009"
+    restart: unless-stopped
+    # No healthcheck: grafana/mimir is distroless (no wget/sh). Readiness on :9009/ready is
+    # validated externally by ops/validate.py (log poll for "Application started").
+
+  # ── Grafana (dashboards) ──────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:12.0.1
+    container_name: conduit-grafana
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    volumes:
+      - ./observability/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./observability/grafana/dashboards/dashboard-provider.yaml:/etc/grafana/provisioning/dashboards/dashboard-provider.yaml:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      loki:
+        condition: service_healthy
+      tempo:
+        condition: service_healthy
+      mimir:
+        condition: service_started   # mimir image is distroless (no wget) → no healthcheck
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  loki-data:
+  tempo-data:
+  mimir-data:
+  grafana-data:
