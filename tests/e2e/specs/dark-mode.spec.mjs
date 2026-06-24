@@ -59,7 +59,8 @@ test.describe('dark mode', () => {
     await toggle.click();
 
     await expect(toggle).toHaveAttribute('aria-label', 'Switch to dark mode');
-    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    // Regressão intencional para o branch e2e/break: o app correto volta para aria-pressed=false.
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     await expect
       .poll(() => page.evaluate(() => document.documentElement.classList.contains('theme-dark')))
       .toBe(false);
