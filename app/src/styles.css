@@ -1,0 +1,113 @@
+/*
+ * Refs: #5
+ * Phase 3 keeps the light Conduit theme pixel-equivalent to the legacy app.
+ * S1 only establishes the Angular 21 workspace; full theme parity lands in S3.
+ */
+body {
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Refs: #6 — S1 dark mode override layer.
+ * Applied only when <html> carries the `theme-dark` class (set by ThemeService).
+ * All selectors are scoped to `.theme-dark` to avoid touching the light theme.
+ * Remote `main.css` is intentionally NOT vendorized (PP-4.3).
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.theme-dark {
+  /* Base palette */
+  --cd-bg: #1a1a2e;
+  --cd-bg-secondary: #16213e;
+  --cd-surface: #0f3460;
+  --cd-text: #e0e0e0;
+  --cd-text-muted: #a0a0b0;
+  --cd-accent: #e94560;
+  --cd-border: #2a2a4e;
+  --cd-link: #7eb8f7;
+  --cd-nav-bg: #16213e;
+  --cd-nav-text: #c8c8d8;
+  --cd-btn-bg: #e94560;
+  --cd-btn-text: #ffffff;
+}
+
+/* Body background and base text */
+.theme-dark body {
+  background-color: var(--cd-bg);
+  color: var(--cd-text);
+}
+
+/* Navbar */
+.theme-dark .navbar {
+  background-color: var(--cd-nav-bg) !important;
+  border-bottom: 1px solid var(--cd-border);
+}
+
+.theme-dark .navbar .navbar-brand {
+  color: var(--cd-accent) !important;
+}
+
+.theme-dark .navbar .nav-link {
+  color: var(--cd-nav-text) !important;
+}
+
+.theme-dark .navbar .nav-link:hover,
+.theme-dark .navbar .nav-link.active {
+  color: var(--cd-text) !important;
+}
+
+/* Theme toggle button — reset browser button styles to blend with nav-links */
+.theme-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 1rem;
+  vertical-align: middle;
+}
+
+/* Banner / hero */
+.theme-dark .banner {
+  background-color: var(--cd-surface);
+  border-bottom: 1px solid var(--cd-border);
+}
+
+/* Cards and content areas */
+.theme-dark .article-preview {
+  border-bottom-color: var(--cd-border);
+}
+
+.theme-dark .article-preview a {
+  color: var(--cd-text);
+}
+
+.theme-dark .article-preview a:hover {
+  color: var(--cd-link);
+}
+
+/* Tags */
+.theme-dark .tag-list .tag-default {
+  background-color: var(--cd-surface);
+  border-color: var(--cd-border);
+  color: var(--cd-text-muted);
+}
+
+/* Buttons */
+.theme-dark .btn-outline-secondary {
+  color: var(--cd-text-muted);
+  border-color: var(--cd-border);
+}
+
+.theme-dark .btn-outline-secondary:hover {
+  background-color: var(--cd-surface);
+  color: var(--cd-text);
+}
+
+/* Footer */
+.theme-dark .footer {
+  background-color: var(--cd-bg-secondary);
+  border-top: 1px solid var(--cd-border);
+}
+
+.theme-dark .footer a {
+  color: var(--cd-link);
+}
