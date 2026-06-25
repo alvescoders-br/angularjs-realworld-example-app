@@ -1,17 +1,35 @@
 /*
- * Refs: #5
- * Phase 3 keeps the light Conduit theme pixel-equivalent to the legacy app.
- * S1 only establishes the Angular 21 workspace; full theme parity lands in S3.
+ * Refs: #5 #6 — camada de tema do app.
+ *
+ * O tema CLARO base vem de public/conduit.css (Conduit vendorizado; antes era o
+ * CDN //demo.productionready.io/main.css, hoje descontinuado). Aqui ficam:
+ *   1. Ajustes de contraste do tema claro (textos auxiliares que reprovavam WCAG AA).
+ *   2. A camada do tema ESCURO, aplicada quando <html> carrega a classe `theme-dark`
+ *      (definida por ThemeService). Todos os seletores escuros são escopados em
+ *      `.theme-dark` para não afetar o tema claro.
  */
 body {
   margin: 0;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
- * Refs: #6 — S1 dark mode override layer.
- * Applied only when <html> carries the `theme-dark` class (set by ThemeService).
- * All selectors are scoped to `.theme-dark` to avoid touching the light theme.
- * Remote `main.css` is intentionally NOT vendorized (PP-4.3).
+ * Tema CLARO — correção de contraste (WCAG AA).
+ * Os cinzas padrão do Conduit (#999/#bbb) reprovam contraste mínimo sobre fundos
+ * claros. Substituídos por um cinza acessível (~5:1 sobre #fff / #f3f3f3 / #f5f5f5),
+ * preservando o layout. Os overrides do tema escuro abaixo têm maior especificidade
+ * e continuam prevalecendo quando `.theme-dark` está ativo.
+ * ───────────────────────────────────────────────────────────────────────────── */
+.article-preview .preview-link p,
+.article-preview .preview-link span,
+.article-meta .info .date,
+.article-page .card .date-posted,
+footer .attribution {
+  color: #5a6169;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Refs: #6 — camada de override do tema ESCURO.
+ * Remote main.css/conduit.css é a base; aqui só sobrescrevemos o necessário.
  * ───────────────────────────────────────────────────────────────────────────── */
 
 .theme-dark {
@@ -28,6 +46,8 @@ body {
   --cd-nav-text: #c8c8d8;
   --cd-btn-bg: #e94560;
   --cd-btn-text: #ffffff;
+
+  background-color: var(--cd-bg);
 }
 
 /* Body background and base text */
@@ -65,10 +85,29 @@ body {
   vertical-align: middle;
 }
 
-/* Banner / hero */
+/* Banner / hero — keep the white banner text readable over the dark surface */
 .theme-dark .banner {
   background-color: var(--cd-surface);
   border-bottom: 1px solid var(--cd-border);
+}
+
+.theme-dark .banner,
+.theme-dark .banner h1,
+.theme-dark .banner p,
+.theme-dark .banner .article-meta .author {
+  color: var(--cd-text);
+}
+
+/* Article body content */
+.theme-dark .article-page .article-content,
+.theme-dark .article-page .article-content p,
+.theme-dark .article-page .article-content li {
+  color: var(--cd-text);
+}
+
+/* Divider between article body and comments */
+.theme-dark hr {
+  border-top-color: var(--cd-border);
 }
 
 /* Cards and content areas */
@@ -82,6 +121,62 @@ body {
 
 .theme-dark .article-preview a:hover {
   color: var(--cd-link);
+}
+
+/* Home sidebar (Popular Tags box) — was a light-grey panel in dark mode */
+.theme-dark .home-page .sidebar {
+  background: var(--cd-bg-secondary);
+  border: 1px solid var(--cd-border);
+}
+
+.theme-dark .home-page .sidebar p {
+  color: var(--cd-text);
+}
+
+/* Cards: comments and the comment form (were white in dark mode) */
+.theme-dark .card {
+  background-color: var(--cd-bg-secondary);
+  box-shadow: inset 0 0 0 1px var(--cd-border);
+  color: var(--cd-text);
+}
+
+.theme-dark .card-block,
+.theme-dark .card-text {
+  color: var(--cd-text);
+}
+
+.theme-dark .card-footer {
+  background-color: var(--cd-surface);
+  box-shadow: inset 0 0 0 1px var(--cd-border);
+}
+
+.theme-dark .article-page .card .date-posted {
+  color: var(--cd-text-muted);
+}
+
+.theme-dark .article-page .card .mod-options {
+  color: var(--cd-text-muted);
+}
+
+.theme-dark .comment-author {
+  color: var(--cd-link);
+}
+
+/* Form controls (comment box + editor/settings/login/register inputs) */
+.theme-dark .form-control {
+  background-color: var(--cd-bg-secondary);
+  color: var(--cd-text);
+  border-color: var(--cd-border);
+}
+
+.theme-dark .form-control::placeholder {
+  color: var(--cd-text-muted);
+}
+
+.theme-dark .form-control:focus {
+  background-color: var(--cd-bg-secondary);
+  color: var(--cd-text);
+  border-color: var(--cd-link);
 }
 
 /* Tags */
@@ -102,12 +197,16 @@ body {
   color: var(--cd-text);
 }
 
-/* Footer */
-.theme-dark .footer {
-  background-color: var(--cd-bg-secondary);
+/* Footer — note: o template usa a tag <footer>, não a classe .footer */
+.theme-dark footer {
+  background: var(--cd-bg-secondary);
   border-top: 1px solid var(--cd-border);
 }
 
-.theme-dark .footer a {
+.theme-dark footer a {
   color: var(--cd-link);
+}
+
+.theme-dark footer .attribution {
+  color: var(--cd-text-muted);
 }
