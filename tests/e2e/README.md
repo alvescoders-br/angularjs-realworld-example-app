@@ -65,7 +65,7 @@ A Fase 5 exige demonstrar a rede E2E em dois estados:
 Estado validado em 2026-06-26 (issue #11):
 
 - `origin/e2e/pass` aponta para `68ce8dd` e representa a branch remota verde da entrega.
-- `e2e/break` existe localmente em `4620476` e demonstra uma regressão intencional.
+- `origin/e2e/break` aponta para `1e314a6` e demonstra uma regressão intencional remota.
 - O estado atual da branch de trabalho tambem roda a suite completa com **14/14 passed**.
 
 Checklist de auditoria:
