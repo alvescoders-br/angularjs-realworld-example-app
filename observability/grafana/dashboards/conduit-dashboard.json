@@ -1,0 +1,50 @@
+{
+  "id": null,
+  "uid": "conduit-frontend",
+  "title": "Conduit Frontend Observability",
+  "tags": ["conduit", "otel"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Outbound HTTP Calls by Endpoint",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "uid": "mimir", "type": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (endpoint) (http_outbound_calls_total{job=\"conduit-frontend\"})",
+          "legendFormat": "{{endpoint}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "App Bootstrap / Beforeunload Logs",
+      "type": "logs",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "uid": "loki", "type": "loki" },
+      "targets": [
+        {
+          "expr": "{job=\"conduit-frontend\"} |= \"app_bootstrap\" or {job=\"conduit-frontend\"} |= \"app_beforeunload\"",
+          "legendFormat": ""
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Traces — Conduit Frontend",
+      "type": "traces",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "datasource": { "uid": "tempo", "type": "tempo" },
+      "targets": [
+        {
+          "queryType": "nativeSearch",
+          "serviceName": "conduit-frontend"
+        }
+      ]
+    }
+  ]
+}

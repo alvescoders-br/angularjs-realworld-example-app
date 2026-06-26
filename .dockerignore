@@ -1,0 +1,30 @@
+# Build outputs (never commit or send to Docker daemon)
+app/dist/
+app/.angular/
+
+# Development deps / caches
+app/node_modules/
+node_modules/
+
+# Test artifacts
+app/coverage/
+app/reports/
+tests/e2e/test-results/
+tests/e2e/node_modules/
+
+# Harness / docs (GUIA §13: never commit)
+harness/
+docs/
+AGENTS.md
+CLAUDE.md
+
+# Git / IDE
+.git/
+.github/
+.vscode/
+.idea/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+$null

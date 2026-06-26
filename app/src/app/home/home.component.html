@@ -1,0 +1,77 @@
+<div class="home-page">
+  @if (!isAuthenticated()) {
+    <div class="banner">
+      <div class="container">
+        <h1 class="logo-font">{{ appName }}</h1>
+        <p>A place to share your knowledge.</p>
+      </div>
+    </div>
+  }
+
+  <div class="container page">
+    <div class="row">
+      <div class="col-md-9">
+        <div class="feed-toggle">
+          <ul class="nav nav-pills outline-active">
+            @if (isAuthenticated()) {
+              <li class="nav-item">
+                <a
+                  href=""
+                  class="nav-link"
+                  [class.active]="listConfig().type === 'feed'"
+                  (click)="showYourFeed($event)">
+                  Your Feed
+                </a>
+              </li>
+            }
+
+            <li class="nav-item">
+              <a
+                href=""
+                class="nav-link"
+                [class.active]="isGlobalFeedActive()"
+                (click)="showGlobalFeed($event)">
+                Global Feed
+              </a>
+            </li>
+
+            @if (activeTag(); as tagName) {
+              <li class="nav-item">
+                <a href="" class="nav-link active" (click)="preventNavigation($event)">
+                  <i class="ion-pound"></i> {{ tagName }}
+                </a>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <app-article-list [limit]="10" [listConfig]="listConfig()" />
+      </div>
+
+      <div class="col-md-3">
+        <div class="sidebar">
+          <p>Popular Tags</p>
+
+          @if (tagsLoaded()) {
+            @if (tags().length > 0) {
+              <div class="tag-list">
+                @for (tagName of tags(); track tagName) {
+                  <a
+                    href=""
+                    class="tag-default tag-pill"
+                    (click)="showTagFeed($event, tagName)">
+                    {{ tagName }}
+                  </a>
+                }
+              </div>
+            } @else {
+              <div class="post-preview">No tags are here... yet.</div>
+            }
+          } @else {
+            <div>Loading tags...</div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

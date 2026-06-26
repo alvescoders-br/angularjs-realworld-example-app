@@ -1,0 +1,261 @@
+/*
+ * Refs: #5 #6 #13 — camada de tema do app.
+ *
+ * O tema CLARO base vem de public/conduit.css (Conduit vendorizado; antes era o
+ * CDN //demo.productionready.io/main.css, hoje descontinuado). Aqui ficam:
+ *   1. Ajustes de contraste do tema claro (textos auxiliares que reprovavam WCAG AA).
+ *   2. A camada do tema ESCURO, aplicada quando <html> carrega a classe `theme-dark`
+ *      (definida por ThemeService). Todos os seletores escuros são escopados em
+ *      `.theme-dark` para não afetar o tema claro.
+ */
+body {
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Tema CLARO — correção de contraste (WCAG AA).
+ * Os cinzas padrão do Conduit (#999/#bbb) reprovam contraste mínimo sobre fundos
+ * claros. Substituídos por um cinza acessível (~5:1 sobre #fff / #f3f3f3 / #f5f5f5),
+ * preservando o layout. Os overrides do tema escuro abaixo têm maior especificidade
+ * e continuam prevalecendo quando `.theme-dark` está ativo.
+ * ───────────────────────────────────────────────────────────────────────────── */
+.article-preview .preview-link p,
+.article-preview .preview-link span,
+.article-meta .info .date,
+.article-page .card .date-posted,
+footer .attribution {
+  color: #5a6169;
+}
+
+.navbar-light .navbar-nav .nav-link {
+  color: #4f5963;
+}
+
+.navbar-light .navbar-nav .nav-link:focus,
+.navbar-light .navbar-nav .nav-link:hover,
+.navbar-light .navbar-nav .nav-link.active,
+.navbar-light .navbar-nav .nav-link.active:focus,
+.navbar-light .navbar-nav .nav-link.active:hover {
+  color: #212529;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Refs: #6 — camada de override do tema ESCURO.
+ * Remote main.css/conduit.css é a base; aqui só sobrescrevemos o necessário.
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.theme-dark {
+  /* Base palette */
+  --cd-bg: #1a1a2e;
+  --cd-bg-secondary: #16213e;
+  --cd-surface: #0f3460;
+  --cd-text: #e0e0e0;
+  --cd-text-muted: #a0a0b0;
+  --cd-accent: #e94560;
+  --cd-border: #2a2a4e;
+  --cd-link: #7eb8f7;
+  --cd-nav-bg: #16213e;
+  --cd-nav-text: #c8c8d8;
+  --cd-btn-bg: #e94560;
+  --cd-btn-text: #ffffff;
+
+  background-color: var(--cd-bg);
+}
+
+/* Body background and base text */
+.theme-dark body {
+  background-color: var(--cd-bg);
+  color: var(--cd-text);
+}
+
+/* Navbar */
+.theme-dark .navbar {
+  background-color: var(--cd-nav-bg) !important;
+  border-bottom: 1px solid var(--cd-border);
+}
+
+.theme-dark .navbar .navbar-brand {
+  color: var(--cd-accent) !important;
+}
+
+.theme-dark .navbar .nav-link {
+  color: var(--cd-nav-text) !important;
+}
+
+.theme-dark .navbar .nav-link:hover,
+.theme-dark .navbar .nav-link.active {
+  color: var(--cd-text) !important;
+}
+
+/* Theme toggle button — reset browser button styles to blend with nav-links */
+.theme-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  line-height: inherit;
+  padding-left: 0;
+  padding-right: 0;
+  text-decoration: none;
+}
+
+.theme-toggle:focus,
+.theme-toggle:hover {
+  background: transparent;
+  text-decoration: none;
+}
+
+.theme-toggle-icon {
+  color: #212529;
+  display: inline-block;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+  min-width: 1.15rem;
+  text-align: center;
+}
+
+.theme-dark .theme-toggle-icon {
+  color: #f8d66d;
+}
+
+/* Banner / hero — keep the white banner text readable over the dark surface */
+.theme-dark .banner {
+  background-color: var(--cd-surface);
+  border-bottom: 1px solid var(--cd-border);
+}
+
+.theme-dark .banner,
+.theme-dark .banner h1,
+.theme-dark .banner p,
+.theme-dark .banner .article-meta .author {
+  color: var(--cd-text);
+}
+
+/* Article body content */
+.theme-dark .article-page .article-content,
+.theme-dark .article-page .article-content p,
+.theme-dark .article-page .article-content li {
+  color: var(--cd-text);
+}
+
+/* Divider between article body and comments */
+.theme-dark hr {
+  border-top-color: var(--cd-border);
+}
+
+/* Cards and content areas */
+.theme-dark .article-preview {
+  border-bottom-color: var(--cd-border);
+}
+
+.theme-dark .article-preview a {
+  color: var(--cd-text);
+}
+
+.theme-dark .article-preview a:hover {
+  color: var(--cd-link);
+}
+
+/* Home sidebar (Popular Tags box) — was a light-grey panel in dark mode */
+.theme-dark .home-page .sidebar {
+  background: var(--cd-bg-secondary);
+  border: 1px solid var(--cd-border);
+}
+
+.theme-dark .home-page .sidebar p {
+  color: var(--cd-text);
+}
+
+.theme-dark .home-page .feed-toggle .nav-pills.outline-active .nav-link {
+  background: transparent;
+  color: var(--cd-text-muted);
+}
+
+.theme-dark .home-page .feed-toggle .nav-pills.outline-active .nav-link:focus,
+.theme-dark .home-page .feed-toggle .nav-pills.outline-active .nav-link:hover {
+  color: var(--cd-text);
+}
+
+.theme-dark .home-page .feed-toggle .nav-pills.outline-active .nav-link.active {
+  background: var(--cd-bg) !important;
+  border-bottom-color: var(--cd-accent) !important;
+  color: var(--cd-accent) !important;
+}
+
+/* Cards: comments and the comment form (were white in dark mode) */
+.theme-dark .card {
+  background-color: var(--cd-bg-secondary);
+  box-shadow: inset 0 0 0 1px var(--cd-border);
+  color: var(--cd-text);
+}
+
+.theme-dark .card-block,
+.theme-dark .card-text {
+  color: var(--cd-text);
+}
+
+.theme-dark .card-footer {
+  background-color: var(--cd-surface);
+  box-shadow: inset 0 0 0 1px var(--cd-border);
+}
+
+.theme-dark .article-page .card .date-posted {
+  color: var(--cd-text-muted);
+}
+
+.theme-dark .article-page .card .mod-options {
+  color: var(--cd-text-muted);
+}
+
+.theme-dark .comment-author {
+  color: var(--cd-link);
+}
+
+/* Form controls (comment box + editor/settings/login/register inputs) */
+.theme-dark .form-control {
+  background-color: var(--cd-bg-secondary);
+  color: var(--cd-text);
+  border-color: var(--cd-border);
+}
+
+.theme-dark .form-control::placeholder {
+  color: var(--cd-text-muted);
+}
+
+.theme-dark .form-control:focus {
+  background-color: var(--cd-bg-secondary);
+  color: var(--cd-text);
+  border-color: var(--cd-link);
+}
+
+/* Tags */
+.theme-dark .tag-list .tag-default {
+  background-color: var(--cd-surface);
+  border-color: var(--cd-border);
+  color: var(--cd-text-muted);
+}
+
+/* Buttons */
+.theme-dark .btn-outline-secondary {
+  color: var(--cd-text-muted);
+  border-color: var(--cd-border);
+}
+
+.theme-dark .btn-outline-secondary:hover {
+  background-color: var(--cd-surface);
+  color: var(--cd-text);
+}
+
+/* Footer — note: o template usa a tag <footer>, não a classe .footer */
+.theme-dark footer {
+  background: var(--cd-bg-secondary);
+  border-top: 1px solid var(--cd-border);
+}
+
+.theme-dark footer a {
+  color: var(--cd-link);
+}
+
+.theme-dark footer .attribution {
+  color: var(--cd-text-muted);
+}

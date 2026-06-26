@@ -1,4 +1,4 @@
-# E2E — Playwright · Paridade S4 da Fase 3 + Incrementos da Fase 4 · Refs #5 #6
+# E2E — Playwright · Paridade S4 da Fase 3 + Incrementos da Fase 4 · Refs #5 #6 #11
 
 A suíte E2E valida os **fluxos observáveis** do app **Angular 21 migrado**
 contra o mesmo mock determinístico da Fase 2, preservando o contrato RealWorld
@@ -62,17 +62,24 @@ A Fase 5 exige demonstrar a rede E2E em dois estados:
 | `e2e/pass` | suíte Playwright completa verde | `cd tests/e2e && npx playwright test` -> exit 0 |
 | `e2e/break` | regressão intencional em um fluxo funcional | `cd tests/e2e && npx playwright test` -> exit 1 |
 
-Estado validado no slice atual:
+Estado validado em 2026-06-26 (issue #11):
 
-- `e2e/pass` candidato: suíte atual com 14/14 testes passando.
-- Evidência: `npm run build --prefix app` PASS; `cd tests/e2e && npm test` PASS (14 passed).
-- `e2e/break` deve ser materializado em branch separada alterando **um único assert
-  funcional observável** (por exemplo, expectativa de `aria-pressed` no teste de dark
-  mode) e confirmando que o Playwright falha sem alterar mock/API/fixtures.
+- `origin/e2e/pass` aponta para `68ce8dd` e representa a branch remota verde da entrega.
+- `origin/e2e/break` aponta para `1e314a6` e demonstra uma regressão intencional remota.
+- O estado atual da branch de trabalho tambem roda a suite completa com **14/14 passed**.
 
-> Nota operacional: criar branches com conteúdo próprio exige commit ou autorização
-> explícita para manipular refs/working tree. Sem commit automático, este README mantém
-> o protocolo auditável e o `progress.md` registra a evidência do pass.
+Checklist de auditoria:
+
+```bash
+git branch --all --verbose --no-abbrev
+npm run build --prefix app
+cd tests/e2e && npm test
+```
+
+Para revalidar a branch quebrada, troque para `e2e/break` apenas quando o working
+tree estiver limpo, rode `npm test` em `tests/e2e`, confirme exit 1 e volte para
+a branch de trabalho. A falha esperada deve ser um assert funcional observavel,
+sem mudar mock, API ou fixtures.
 
 ## Estrutura
 

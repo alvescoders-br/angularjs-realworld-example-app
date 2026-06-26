@@ -1,0 +1,10 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.app-shell {
+  box-sizing: border-box;
+  font-family: "Source Sans Pro", sans-serif;
+  padding: 2rem;
+}

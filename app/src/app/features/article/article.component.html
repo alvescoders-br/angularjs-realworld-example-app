@@ -1,0 +1,103 @@
+<div class="article-page">
+  @if (isLoading()) {
+    <div class="container page">
+      <p>Loading article...</p>
+    </div>
+  } @else if (loadError()) {
+    <div class="container page">
+      <p class="text-xs-center">{{ loadError() }}</p>
+    </div>
+  } @else if (article(); as loadedArticle) {
+    <div class="banner">
+      <div class="container">
+        <h1>{{ loadedArticle.title }}</h1>
+        <div class="article-meta">
+          <app-article-actions
+            [article]="loadedArticle"
+            (articleChange)="replaceArticle($event)" />
+        </div>
+      </div>
+    </div>
+
+    <div class="container page">
+      <div class="row article-content">
+        <div class="col-xs-12">
+          <app-markdown-content [markdown]="loadedArticle.body" />
+
+          <ul class="tag-list">
+            @for (tag of loadedArticle.tagList; track tag) {
+              <li class="tag-default tag-pill tag-outline">{{ tag }}</li>
+            }
+          </ul>
+        </div>
+      </div>
+
+      <hr />
+
+      <div class="article-actions">
+        <app-article-actions
+          [article]="loadedArticle"
+          (articleChange)="replaceArticle($event)" />
+      </div>
+
+      <div class="row">
+        <div class="col-xs-12 col-md-8 offset-md-2">
+          @if (isAuthenticated()) {
+            <app-list-errors [errors]="commentErrors()" />
+            <form class="card comment-form" (submit)="addComment($event)">
+              <fieldset [disabled]="isCommentSubmitting()">
+                <div class="card-block">
+                  <textarea
+                    class="form-control"
+                    placeholder="Write a comment..."
+                    rows="3"
+                    [value]="commentBody()"
+                    (input)="updateCommentBody($event)"></textarea>
+                </div>
+                <div class="card-footer">
+                  @if (currentUser(); as user) {
+                    <img [src]="user.image ?? ''" class="comment-author-img" alt="" />
+                  }
+                  <button class="btn btn-sm btn-primary" type="submit">
+                    Post Comment
+                  </button>
+                </div>
+              </fieldset>
+            </form>
+          } @else {
+            <p>
+              <a routerLink="/login">Sign in</a> or
+              <a routerLink="/register">sign up</a> to add comments on this article.
+            </p>
+          }
+
+          @for (comment of comments(); track comment.id) {
+            <div class="card">
+              <div class="card-block">
+                <p class="card-text">{{ comment.body }}</p>
+              </div>
+              <div class="card-footer">
+                <a class="comment-author" [routerLink]="['/profile', comment.author.username]">
+                  <img
+                    [src]="comment.author.image ?? ''"
+                    class="comment-author-img"
+                    [alt]="comment.author.username" />
+                </a>
+                &nbsp;
+                <a class="comment-author" [routerLink]="['/profile', comment.author.username]">
+                  {{ comment.author.username }}
+                </a>
+                <span class="date-posted">{{ comment.createdAt | date: 'longDate' }}</span>
+                @if (canModifyComment(comment)) {
+                  <span class="mod-options">
+                    <i class="ion-trash-a" (click)="deleteComment(comment.id)"></i>
+                  </span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>
