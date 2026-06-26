@@ -1,7 +1,7 @@
-// Refs: #5 — S3a layout component: header / nav bar.
+// Refs: #5 - S3a layout component: header / nav bar.
 // Shows guest nav (Home / Sign in / Sign up) or authed nav (Home / New Article / Settings / Profile).
 // Reads UserService.currentUser() and isAuthenticated() as Signals (PP-3.1).
-// Refs: #6 — S1 dark mode: toggle button appended to nav without reorganizing existing items.
+// Refs: #6 #13 - dark mode: toggle button appended to nav without reorganizing existing items.
 
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
@@ -38,7 +38,11 @@ import { UserService } from '../core/user.service';
                 [attr.aria-label]="themeService.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
                 [attr.aria-pressed]="themeService.isDark()"
                 (click)="themeService.toggle()">
-                {{ themeService.isDark() ? '☀️' : '🌙' }}
+                @if (themeService.isDark()) {
+                  <span class="theme-toggle-icon" aria-hidden="true">&#9728;</span>
+                } @else {
+                  <span class="theme-toggle-icon" aria-hidden="true">&#9790;</span>
+                }
               </button>
             </li>
           </ul>
@@ -80,7 +84,11 @@ import { UserService } from '../core/user.service';
                 [attr.aria-label]="themeService.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
                 [attr.aria-pressed]="themeService.isDark()"
                 (click)="themeService.toggle()">
-                {{ themeService.isDark() ? '☀️' : '🌙' }}
+                @if (themeService.isDark()) {
+                  <span class="theme-toggle-icon" aria-hidden="true">&#9728;</span>
+                } @else {
+                  <span class="theme-toggle-icon" aria-hidden="true">&#9790;</span>
+                }
               </button>
             </li>
           </ul>
