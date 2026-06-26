@@ -28,6 +28,7 @@
               }
             ],
             "styles": [
+              "public/conduit.css",
               "src/styles.css"
             ]
           },

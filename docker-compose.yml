@@ -19,7 +19,8 @@ services:
         condition: service_started   # collector has no healthcheck (distroless image)
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      # Refs #11: 127.0.0.1 (not localhost); nginx serves IPv4 while localhost may resolve ::1 first.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/"]
       interval: 15s
       timeout: 5s
       retries: 3

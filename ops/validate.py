@@ -29,7 +29,11 @@ from pathlib import Path
 from typing import NoReturn
 
 # Pure helper — testable without Docker
-from readiness import validate_bootstrap, validate_shutdown
+from readiness import (
+    validate_bootstrap,
+    validate_observability_artifacts,
+    validate_shutdown,
+)
 
 _SERVICES = ["loki", "tempo", "mimir", "grafana", "otel-collector", "frontend"]
 _DEFAULT_COMPOSE = "docker-compose.yml"
@@ -84,6 +88,14 @@ def _compose_logs(compose_file: str, service: str) -> list[str]:
     return combined.splitlines()
 
 
+def _read_text(path: Path) -> str:
+    """Read UTF-8 text, returning an empty string when a required artifact is absent."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return ""
+
+
 # ── Orchestration ─────────────────────────────────────────────────────────────
 
 
@@ -136,6 +148,20 @@ def collect_shutdown_logs(compose_file: str) -> dict[str, list[str]]:
     return {svc: _compose_logs(compose_file, svc) for svc in _SERVICES}
 
 
+def validate_static_observability_artifacts(compose_file: str) -> None:
+    """Validate repo-owned LGTM/OTel config before Docker starts."""
+    root = Path(compose_file).resolve().parent
+    artifacts = {
+        "otel-collector": _read_text(root / "observability/otel-collector/otel-collector.yaml"),
+        "grafana-dashboard": _read_text(root / "observability/grafana/dashboards/conduit-dashboard.json"),
+        "grafana-datasources": _read_text(root / "observability/grafana/datasources/datasources.yaml"),
+    }
+    ok, message = validate_observability_artifacts(artifacts)
+    if not ok:
+        _exit_with_error(message)
+    print(f"[validate] PASS — {message}.")
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 
@@ -165,6 +191,7 @@ def main() -> int:
         print(f"[validate] ERROR: Compose file not found: {compose_file}", file=sys.stderr)
         return 1
 
+    validate_static_observability_artifacts(compose_file)
     ensure_docker_is_available()
 
     try:

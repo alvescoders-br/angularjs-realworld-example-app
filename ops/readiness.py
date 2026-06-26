@@ -145,3 +145,32 @@ def validate_shutdown(service_logs: dict[str, Sequence[str]]) -> tuple[bool, str
     if with_shutdown:
         return True, "Shutdown logs seen for: " + ", ".join(sorted(with_shutdown))
     return False, "No shutdown logs seen yet"
+
+
+def validate_observability_artifacts(artifact_texts: dict[str, str]) -> tuple[bool, str]:
+    """
+    Validate the static LGTM/OTel artifacts that make runtime telemetry possible.
+
+    The Docker gate proves services can start; this check proves the repo-owned
+    configs still wire the three required signal types: metrics, logs and traces.
+    """
+    collector = artifact_texts.get("otel-collector", "")
+    dashboard = artifact_texts.get("grafana-dashboard", "")
+    datasources = artifact_texts.get("grafana-datasources", "")
+
+    checks = {
+        "collector traces pipeline": "traces:" in collector and "otlp/tempo" in collector,
+        "collector metrics pipeline": "metrics:" in collector and "prometheusremotewrite" in collector,
+        "collector logs pipeline": "logs:" in collector and "loki" in collector,
+        "grafana tempo datasource": "uid: tempo" in datasources and "type: tempo" in datasources,
+        "grafana mimir datasource": "uid: mimir" in datasources and "type: prometheus" in datasources,
+        "grafana loki datasource": "uid: loki" in datasources and "type: loki" in datasources,
+        "endpoint counter panel": "http_outbound_calls_total" in dashboard,
+        "bootstrap/shutdown log panel": "app_bootstrap" in dashboard and "app_beforeunload" in dashboard,
+        "trace panel": '"type": "traces"' in dashboard and "conduit-frontend" in dashboard,
+    }
+
+    missing = [name for name, ok in checks.items() if not ok]
+    if missing:
+        return False, "Observability artifacts missing: " + ", ".join(missing)
+    return True, "Observability artifacts cover metrics, logs and traces"

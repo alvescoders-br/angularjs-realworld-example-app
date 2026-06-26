@@ -8,7 +8,8 @@
     "build": "ng build",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "eslint \"src/**/*.ts\"",
-    "test": "ng test --watch=false --coverage"
+    "test": "ng test --watch=false --coverage",
+    "mutation": "stryker run"
   },
   "dependencies": {
     "@angular/common": "^21.0.0",

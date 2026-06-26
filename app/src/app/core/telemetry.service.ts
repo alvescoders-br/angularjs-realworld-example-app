@@ -2,6 +2,7 @@
 // PP-6.2: endpoint = HTTP outbound calls; start/stop = bootstrap/beforeunload.
 // The interceptor (otel.interceptor.ts) observes calls and increments counters here.
 import { inject, Injectable, OnDestroy } from '@angular/core';
+import { SpanStatusCode, trace, type Span } from '@opentelemetry/api';
 import {
   CompositePropagator,
   W3CBaggagePropagator,
@@ -109,6 +110,36 @@ export class TelemetryService implements OnDestroy {
       this.endpointCounters.set(endpoint, counter);
     }
     this.endpointCounters.get(endpoint)?.add(1, { endpoint });
+  }
+
+  /** Start a read-only span for an outbound API call observed by the interceptor. */
+  startEndpointSpan(endpoint: string, method: string): Span | undefined {
+    if (!this.tracerProvider) return undefined;
+
+    return trace.getTracer('conduit-frontend').startSpan('http.outbound', {
+      attributes: {
+        'app.endpoint': endpoint,
+        'http.request.method': method,
+        'url.path': endpoint,
+      },
+    });
+  }
+
+  markEndpointSpanStatus(span: Span, statusCode: number): void {
+    span.setAttribute('http.response.status_code', statusCode);
+    if (statusCode >= 400) {
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: `HTTP ${statusCode}`,
+      });
+    }
+  }
+
+  markEndpointSpanError(span: Span, error: unknown): void {
+    span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: error instanceof Error ? error.message : String(error),
+    });
   }
 
   private handleBeforeUnload(): void {

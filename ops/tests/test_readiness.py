@@ -19,6 +19,7 @@ from readiness import (  # noqa: E402
     assess_stack,
     parse_service_logs,
     validate_bootstrap,
+    validate_observability_artifacts,
     validate_shutdown,
 )
 
@@ -194,6 +195,74 @@ class TestValidateShutdown:
         assert ok is True
         assert "loki" in msg
         assert "tempo" in msg
+
+
+# ── validate_observability_artifacts ──────────────────────────────────────────
+
+
+class TestValidateObservabilityArtifacts:
+    def valid_artifacts(self) -> dict[str, str]:
+        return {
+            "otel-collector": """
+exporters:
+  otlp/tempo:
+  prometheusremotewrite:
+  loki:
+service:
+  pipelines:
+    traces:
+      exporters: [otlp/tempo]
+    metrics:
+      exporters: [prometheusremotewrite]
+    logs:
+      exporters: [loki]
+""",
+            "grafana-datasources": """
+datasources:
+  - uid: loki
+    type: loki
+  - uid: tempo
+    type: tempo
+  - uid: mimir
+    type: prometheus
+""",
+            "grafana-dashboard": """
+{
+  "panels": [
+    { "type": "timeseries", "targets": [{ "expr": "http_outbound_calls_total" }] },
+    { "type": "logs", "targets": [{ "expr": "app_bootstrap app_beforeunload" }] },
+    { "type": "traces", "targets": [{ "serviceName": "conduit-frontend" }] }
+  ]
+}
+""",
+        }
+
+    def test_valid_artifacts_pass(self) -> None:
+        ok, msg = validate_observability_artifacts(self.valid_artifacts())
+
+        assert ok is True
+        assert "metrics, logs and traces" in msg
+
+    def test_missing_counter_fails(self) -> None:
+        artifacts = self.valid_artifacts()
+        artifacts["grafana-dashboard"] = artifacts["grafana-dashboard"].replace(
+            "http_outbound_calls_total",
+            "missing_counter",
+        )
+
+        ok, msg = validate_observability_artifacts(artifacts)
+
+        assert ok is False
+        assert "endpoint counter panel" in msg
+
+    def test_missing_collector_pipeline_fails(self) -> None:
+        artifacts = self.valid_artifacts()
+        artifacts["otel-collector"] = artifacts["otel-collector"].replace("logs:", "logz:")
+
+        ok, msg = validate_observability_artifacts(artifacts)
+
+        assert ok is False
+        assert "collector logs pipeline" in msg
 
 
 # ── StackStatus dataclass ─────────────────────────────────────────────────────

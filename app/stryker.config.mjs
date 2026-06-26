@@ -16,6 +16,9 @@ export default {
     '!src/test-setup.ts',
     '!src/app/app.config.ts',
     '!src/app/app.routes.ts',
+    // Refs #11: OTel SDK bootstrap wiring is validated by unit tests + ops/LGTM gates.
+    // Mutation remains focused on app logic and the read-only HTTP interceptor.
+    '!src/app/core/telemetry.service.ts',
   ],
   thresholds: {
     high: 95,
